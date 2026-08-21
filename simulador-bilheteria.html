@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador de Bilheteria</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #121016;
+    --surface: #1C1A22;
+    --surface-2: #232028;
+    --border: #34303c;
+    --text: #F3EFE6;
+    --muted: #948FA0;
+    --amber: #F2B705;
+    --amber-dim: #6b5405;
+    --pink: #FF4D79;
+    --pink-dim: #6b2233;
+    --teal: #2FD3A8;
+    --teal-dim: #135a49;
+    --danger: #FF5C5C;
+    --radius: 14px;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    padding: 24px 16px 64px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{ max-width: 760px; margin: 0 auto; }
+
+  header.marquee{ text-align:center; margin-bottom: 22px; padding-bottom: 4px; }
+  header.marquee .eyebrow{ font-family:'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--amber); text-transform: uppercase; }
+  header.marquee h1{
+    font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 2px; margin: 4px 0 6px; line-height: 1;
+    background: linear-gradient(90deg, var(--amber), var(--pink));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  header.marquee p{ color: var(--muted); font-size: 13px; margin: 0; }
+
+  .tabs{ display:flex; gap:6px; margin-bottom: 18px; }
+  .tab-btn{
+    flex:1; background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    padding: 12px 6px; border-radius: 10px 10px 0 0; font-family:'IBM Plex Mono', monospace;
+    font-size: 10.5px; letter-spacing: .5px; cursor:pointer; text-align:center; line-height:1.3;
+  }
+  #tabIngressos.active{ background: var(--amber); border-color: var(--amber); color: var(--bg); font-weight:700; }
+  #tabBilheteria.active{ background: var(--pink); border-color: var(--pink); color: var(--bg); font-weight:700; }
+  #tabBar.active{ background: var(--teal); border-color: var(--teal); color: var(--bg); font-weight:700; }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .card{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 18px; }
+  .card h2{ font-family:'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--amber); margin: 0 0 4px; }
+  .card.casa h2{ color: var(--pink); }
+  .card.bar h2{ color: var(--teal); }
+  .card .sub{ font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+
+  .grid2{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  label{ display:block; font-size: 11px; color: var(--muted); margin-bottom: 5px; letter-spacing: .3px; }
+  input[type=number], input[type=text]{
+    width:100%; background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+    font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding: 9px 10px; border-radius: 8px; outline:none;
+  }
+  input:focus{ border-color: var(--amber); }
+  input[type=text]{ font-family:'Inter',sans-serif; font-weight:600; }
+  .field{ margin-bottom: 10px; }
+  .field.readonly input{ color: var(--muted); background: var(--bg); }
+
+  .lote-row{ display:grid; grid-template-columns: 1.3fr 1fr 1fr auto; gap: 8px; align-items:end; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+  .lote-row:last-of-type{ border-bottom:none; }
+  .rm-btn{ background: none; border: 1px solid var(--border); color: var(--muted); width: 36px; height: 36px; border-radius: 8px; cursor:pointer; font-size: 16px; line-height:1; }
+  .rm-btn:hover{ color: var(--danger); border-color: var(--danger); }
+
+  .add-btn{ margin-top: 10px; background: var(--surface-2); border: 1px dashed var(--border); color: var(--amber); padding: 9px 14px; border-radius: 8px; font-family:'IBM Plex Mono', monospace; font-size: 12px; cursor:pointer; width:100%; }
+  .add-btn:hover{ border-color: var(--amber); }
+
+  .meter{ margin-top: 12px; }
+  .meter .row{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-bottom:5px; }
+  .meter .track{ height:8px; background: var(--surface-2); border-radius:5px; overflow:hidden; }
+  .meter .fill{ height:100%; background: var(--amber); transition: width .2s; }
+  .meter .fill.over{ background: var(--danger); }
+  .meter .warn{ color: var(--danger); font-size:11px; margin-top:5px; font-family:'IBM Plex Mono',monospace; }
+
+  .tear{ position: relative; height: 1px; background: repeating-linear-gradient(to right, var(--border) 0 8px, transparent 8px 16px); margin: 4px -1px 18px; }
+  .tear::before, .tear::after{ content:""; position:absolute; top:50%; transform:translateY(-50%); width:18px; height:18px; border-radius:50%; background: var(--bg); }
+  .tear::before{ left:-10px; }
+  .tear::after{ right:-10px; }
+
+  .results{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 18px; }
+  .results h2{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--amber); margin:0 0 14px; }
+  .results.casa h2{ color: var(--pink); }
+  .results.bar h2{ color: var(--teal); }
+  .line{ display:flex; justify-content:space-between; align-items:baseline; padding: 8px 0; border-bottom: 1px solid var(--border); font-family:'IBM Plex Mono', monospace; }
+  .line:last-child{ border-bottom:none; }
+  .line .l{ color: var(--muted); font-size: 13px; }
+  .line .v{ font-size: 15px; font-weight:600; }
+  .line.total .v{ font-size: 22px; color: var(--teal); font-family:'Bebas Neue',sans-serif; letter-spacing:1px; }
+  .line.total.casa .v{ color: var(--pink); }
+  .line.total.bar .v{ color: var(--teal); }
+  .line.taxa .v{ color: var(--pink); }
+
+  .badge{ display:inline-block; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:1px; padding:4px 8px; border-radius:6px; margin-bottom:14px; }
+  .badge.casa{ color: var(--pink); background: rgba(255,77,121,0.1); border:1px solid var(--pink-dim); }
+  .badge.bar{ color: var(--teal); background: rgba(47,211,168,0.1); border:1px solid var(--teal-dim); }
+  .badge.split{ color: var(--amber); background: rgba(242,183,5,0.08); border:1px solid var(--amber-dim); }
+
+  .bar-viz{ display:flex; width:100%; height:14px; border-radius:7px; overflow:hidden; margin-bottom:18px; border:1px solid var(--border); }
+  .bar-viz div{ height:100%; }
+
+  .split-cols{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .split-part{ border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .split-part.p1{ border-top: 3px solid var(--amber); }
+  .split-part.p2{ border-top: 3px solid var(--pink); }
+  .split-part .part-total{ font-family:'Bebas Neue',sans-serif; font-size: 26px; letter-spacing: 1px; margin: 2px 0 10px; }
+  .split-part.p1 .part-total{ color: var(--amber); }
+  .split-part.p2 .part-total{ color: var(--pink); }
+  .split-part .part-label{ font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; letter-spacing:1px; }
+  .role{ display:grid; grid-template-columns: 1fr 60px 1fr; gap:8px; align-items:center; margin-bottom:8px; }
+  .role .val{ font-family:'IBM Plex Mono',monospace; font-size:13px; text-align:right; font-weight:600; }
+  .role input{ text-align:center; padding:6px; }
+
+  .pct-warn{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:11px; margin-top:6px; padding:8px; border-radius:8px; }
+  .pct-warn.ok{ color: var(--teal); background: rgba(47,211,168,0.08); }
+  .pct-warn.bad{ color: var(--danger); background: rgba(255,92,92,0.08); }
+
+  @media (max-width:480px){ .grid2, .split-cols{ grid-template-columns: 1fr 1fr; } }
+  footer{ text-align:center; color:var(--muted); font-size:11px; margin-top: 24px; font-family:'IBM Plex Mono',monospace; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="marquee">
+    <div class="eyebrow">Bilheteria · Ao Vivo</div>
+    <h1>Simulador de Faturamento</h1>
+    <p>Ajuste preços, lotes e splits para simular diferentes cenários do evento</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabIngressos" data-tab="ingressos">🎫 INGRESSOS<br>& SPLIT</button>
+    <button class="tab-btn" id="tabBilheteria" data-tab="bilheteria">🏛 BILHETERIA<br>(CASA)</button>
+    <button class="tab-btn" id="tabBar" data-tab="bar">🍹 BAR</button>
+  </div>
+
+  <!-- ===================== PAINEL: INGRESSOS & SPLIT ===================== -->
+  <div class="panel active" id="panel-ingressos">
+
+    <div class="card">
+      <h2>Capacidade</h2>
+      <p class="sub">Ingressos disponíveis por setor</p>
+      <div class="grid2">
+        <div class="field">
+          <label>Pista — Disponíveis</label>
+          <input type="number" id="pistaCap" value="950" min="0">
+        </div>
+        <div class="field">
+          <label>VIP — Disponíveis</label>
+          <input type="number" id="vipCap" value="150" min="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Lotes — Pista</h2>
+      <p class="sub">Preço e quantidade vendida por lote</p>
+      <div id="lotesContainer"></div>
+      <button class="add-btn" id="addLote">+ ADICIONAR LOTE</button>
+      <div class="meter">
+        <div class="row"><span id="pistaVendidosLabel">0 vendidos</span><span id="pistaCapLabel">de 950</span></div>
+        <div class="track"><div class="fill" id="pistaFill"></div></div>
+        <div class="warn" id="pistaWarn" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>VIP</h2>
+      <p class="sub">Valor do ingresso VIP (alterável) e quantidade vendida</p>
+      <div class="grid2">
+        <div class="field">
+          <label>Preço VIP (R$)</label>
+          <input type="number" id="vipPreco" value="120" min="0" step="1">
+        </div>
+        <div class="field">
+          <label>Vendidos</label>
+          <input type="number" id="vipQtd" value="75" min="0">
+        </div>
+      </div>
+      <div class="meter">
+        <div class="row"><span id="vipVendidosLabel">75 vendidos</span><span id="vipCapLabel">de 150</span></div>
+        <div class="track"><div class="fill" id="vipFill" style="background:var(--pink);"></div></div>
+        <div class="warn" id="vipWarn" style="display:none;"></div>
+      </div>
+    </div>
+
+    <div class="tear"></div>
+
+    <div class="results">
+      <h2>Receita de Ingressos</h2>
+      <div class="line"><span class="l">Receita bruta — Pista</span><span class="v" id="rPista">R$ 0</span></div>
+      <div class="line"><span class="l">Receita bruta — VIP</span><span class="v" id="rVip">R$ 0</span></div>
+      <div class="line total"><span class="l">Receita bruta total (ingressos)</span><span class="v" id="rBrutaIngressos">R$ 0</span></div>
+    </div>
+
+    <div class="card">
+      <span class="badge split">SPLIT DOS ORGANIZADORES</span>
+      <h2>Split 50 / 50</h2>
+      <p class="sub">Calculado sobre 100% da receita de ingressos. A taxa da bilheteria fica de fora — veja a aba Bilheteria (Casa).</p>
+
+      <div class="bar-viz" id="splitBar">
+        <div id="barCarioca" style="background:var(--amber);"></div>
+        <div id="barMatheus" style="background:var(--amber-dim);"></div>
+        <div id="barZero" style="background:var(--pink);"></div>
+        <div id="barProducao" style="background:var(--pink-dim);"></div>
+      </div>
+
+      <div class="split-cols">
+        <div class="split-part p1">
+          <div class="part-label">PARTE 1</div>
+          <div class="part-total" id="p1Total">R$ 0</div>
+          <div class="role"><span>Carioca</span><input type="number" id="pctCarioca" value="40" min="0" max="100"><span class="val" id="valCarioca">R$ 0</span></div>
+          <div class="role"><span>Matheus</span><input type="number" id="pctMatheus" value="10" min="0" max="100"><span class="val" id="valMatheus">R$ 0</span></div>
+        </div>
+        <div class="split-part p2">
+          <div class="part-label">PARTE 2</div>
+          <div class="part-total" id="p2Total">R$ 0</div>
+          <div class="role"><span>ZeRO</span><input type="number" id="pctZero" value="40" min="0" max="100"><span class="val" id="valZero">R$ 0</span></div>
+          <div class="role"><span>Produção</span><input type="number" id="pctProducao" value="10" min="0" max="100"><span class="val" id="valProducao">R$ 0</span></div>
+        </div>
+      </div>
+
+      <div class="pct-warn ok" id="pctWarn">Total: 100% — split fechado ✓</div>
+    </div>
+  </div>
+
+  <!-- ===================== PAINEL: BILHETERIA (CASA) ===================== -->
+  <div class="panel" id="panel-bilheteria">
+    <div class="card casa">
+      <span class="badge casa">FATURAMENTO DA CASA</span>
+      <h2>Taxa da Bilheteria</h2>
+      <p class="sub">15% sobre todos os ingressos vendidos. Repassada integralmente à Casa — não entra no split dos organizadores.</p>
+      <div class="field">
+        <label>Taxa da Bilheteria (%)</label>
+        <input type="number" id="taxaPct" value="15" min="0" max="100" step="0.5">
+      </div>
+    </div>
+
+    <div class="results casa">
+      <h2>Arrecadação da Bilheteria</h2>
+      <div class="line"><span class="l">Receita de ingressos (bruta)</span><span class="v" id="casaRIngressos">R$ 0</span></div>
+      <div class="line taxa"><span class="l" id="casaTaxaLabel">Taxa bilheteria (15%) → Casa</span><span class="v" id="casaRTaxa">R$ 0</span></div>
+      <div class="line total casa"><span class="l">Total arrecadado (ingressos + taxa)</span><span class="v" id="casaTotal">R$ 0</span></div>
+    </div>
+  </div>
+
+  <!-- ===================== PAINEL: BAR ===================== -->
+  <div class="panel" id="panel-bar">
+    <div class="card bar">
+      <span class="badge bar">RECEITA SEGREGADA · FORA DO SPLIT</span>
+      <h2>Ticket Médio — Bar</h2>
+      <p class="sub">Estimativa de faturamento do bar com base no público do evento.</p>
+
+      <div class="field readonly">
+        <label>Público total no evento (ingressos vendidos)</label>
+        <input type="text" id="barPublicoTotal" value="0" readonly>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Conversão no bar (%)</label>
+          <input type="number" id="barConversao" value="100" min="0" max="100" step="1">
+        </div>
+        <div class="field">
+          <label>Ticket médio por cabeça (R$)</label>
+          <input type="number" id="barTicketMedio" value="25" min="0" step="1">
+        </div>
+      </div>
+    </div>
+
+    <div class="results bar">
+      <h2>Receita Estimada do Bar</h2>
+      <div class="line"><span class="l">Público que consome no bar</span><span class="v" id="barPublicoConsome">0 pessoas</span></div>
+      <div class="line"><span class="l">Ticket médio</span><span class="v" id="barTicketLabel">R$ 0</span></div>
+      <div class="line total bar"><span class="l">Receita estimada do bar</span><span class="v" id="barTotal">R$ 0</span></div>
+    </div>
+  </div>
+
+  <footer>Todos os valores são editáveis · simule quantos cenários quiser</footer>
+</div>
+
+<script>
+let lotes = [
+  { nome: '1º Lote', preco: 50, qtd: 300 },
+  { nome: '2º Lote', preco: 60, qtd: 300 },
+  { nome: '3º Lote', preco: 80, qtd: 300 }
+];
+
+const fmt = v => (isNaN(v) ? 0 : v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const $ = id => document.getElementById(id);
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    $('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ---------- Lotes ----------
+function renderLotes(){
+  const c = $('lotesContainer');
+  c.innerHTML = '';
+  lotes.forEach((lote, i) => {
+    const row = document.createElement('div');
+    row.className = 'lote-row';
+    row.innerHTML = `
+      <div class="field" style="margin:0;">
+        <label>Nome</label>
+        <input type="text" data-idx="${i}" data-field="nome" value="${lote.nome}">
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Preço (R$)</label>
+        <input type="number" data-idx="${i}" data-field="preco" value="${lote.preco}" min="0" step="1">
+      </div>
+      <div class="field" style="margin:0;">
+        <label>Vendidos</label>
+        <input type="number" data-idx="${i}" data-field="qtd" value="${lote.qtd}" min="0">
+      </div>
+      <button class="rm-btn" data-idx="${i}" title="Remover lote">×</button>
+    `;
+    c.appendChild(row);
+  });
+
+  c.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const i = +e.target.dataset.idx;
+      const field = e.target.dataset.field;
+      lotes[i][field] = field === 'nome' ? e.target.value : (parseFloat(e.target.value) || 0);
+      calc();
+    });
+  });
+  c.querySelectorAll('.rm-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const i = +e.target.dataset.idx;
+      lotes.splice(i, 1);
+      renderLotes();
+      calc();
+    });
+  });
+}
+
+$('addLote').addEventListener('click', () => {
+  lotes.push({ nome: `${lotes.length + 1}º Lote`, preco: 0, qtd: 0 });
+  renderLotes();
+  calc();
+});
+
+[
+  'pistaCap','vipCap','vipPreco','vipQtd',
+  'pctCarioca','pctMatheus','pctZero','pctProducao',
+  'taxaPct',
+  'barConversao','barTicketMedio'
+].forEach(id => $(id).addEventListener('input', calc));
+
+function calc(){
+  const pistaCap = parseFloat($('pistaCap').value) || 0;
+  const vipCap = parseFloat($('vipCap').value) || 0;
+  const vipPreco = parseFloat($('vipPreco').value) || 0;
+  const vipQtd = parseFloat($('vipQtd').value) || 0;
+
+  const pistaVendidos = lotes.reduce((s,l) => s + (l.qtd||0), 0);
+  const receitaPista = lotes.reduce((s,l) => s + (l.preco||0)*(l.qtd||0), 0);
+  const receitaVip = vipPreco * vipQtd;
+  const receitaBrutaIngressos = receitaPista + receitaVip;
+  const totalVendidos = pistaVendidos + vipQtd;
+
+  // ----- Meters -----
+  $('pistaVendidosLabel').textContent = `${pistaVendidos} vendidos`;
+  $('pistaCapLabel').textContent = `de ${pistaCap}`;
+  const pistaPct = pistaCap>0 ? Math.min(100,(pistaVendidos/pistaCap)*100) : 0;
+  $('pistaFill').style.width = pistaPct+'%';
+  $('pistaFill').classList.toggle('over', pistaVendidos>pistaCap);
+  $('pistaWarn').style.display = pistaVendidos>pistaCap ? 'block' : 'none';
+  $('pistaWarn').textContent = `Excedeu a capacidade em ${pistaVendidos-pistaCap} ingressos`;
+
+  $('vipVendidosLabel').textContent = `${vipQtd} vendidos`;
+  $('vipCapLabel').textContent = `de ${vipCap}`;
+  const vipPct = vipCap>0 ? Math.min(100,(vipQtd/vipCap)*100) : 0;
+  $('vipFill').style.width = vipPct+'%';
+  $('vipFill').classList.toggle('over', vipQtd>vipCap);
+  $('vipWarn').style.display = vipQtd>vipCap ? 'block' : 'none';
+  $('vipWarn').textContent = `Excedeu a capacidade em ${vipQtd-vipCap} ingressos`;
+
+  // ----- Receita de ingressos -----
+  $('rPista').textContent = fmt(receitaPista);
+  $('rVip').textContent = fmt(receitaVip);
+  $('rBrutaIngressos').textContent = fmt(receitaBrutaIngressos);
+
+  // ----- Split (100% sobre receita de ingressos, taxa fora) -----
+  const base = receitaBrutaIngressos;
+  const pC = parseFloat($('pctCarioca').value) || 0;
+  const pM = parseFloat($('pctMatheus').value) || 0;
+  const pZ = parseFloat($('pctZero').value) || 0;
+  const pP = parseFloat($('pctProducao').value) || 0;
+  const total = pC+pM+pZ+pP;
+
+  const vC = base*pC/100, vM = base*pM/100, vZ = base*pZ/100, vP = base*pP/100;
+  $('valCarioca').textContent = fmt(vC);
+  $('valMatheus').textContent = fmt(vM);
+  $('valZero').textContent = fmt(vZ);
+  $('valProducao').textContent = fmt(vP);
+  $('p1Total').textContent = fmt(vC+vM);
+  $('p2Total').textContent = fmt(vZ+vP);
+
+  $('barCarioca').style.width = pC+'%';
+  $('barMatheus').style.width = pM+'%';
+  $('barZero').style.width = pZ+'%';
+  $('barProducao').style.width = pP+'%';
+
+  const warn = $('pctWarn');
+  if (Math.abs(total-100) < 0.001){
+    warn.className = 'pct-warn ok';
+    warn.textContent = `Total: ${total}% — split fechado ✓`;
+  } else {
+    warn.className = 'pct-warn bad';
+    warn.textContent = `Total: ${total}% — ajuste os percentuais para fechar em 100%`;
+  }
+
+  // ----- Bilheteria (Casa) — segregada, fora do split -----
+  const taxaPct = parseFloat($('taxaPct').value) || 0;
+  const taxaValor = receitaBrutaIngressos * (taxaPct/100);
+  const totalArrecadado = receitaBrutaIngressos + taxaValor;
+
+  $('casaRIngressos').textContent = fmt(receitaBrutaIngressos);
+  $('casaTaxaLabel').textContent = `Taxa bilheteria (${taxaPct}%) → Casa`;
+  $('casaRTaxa').textContent = fmt(taxaValor);
+  $('casaTotal').textContent = fmt(totalArrecadado);
+
+  // ----- Bar — segregado, fora do split -----
+  $('barPublicoTotal').value = `${totalVendidos} pessoas`;
+  const barConversao = parseFloat($('barConversao').value) || 0;
+  const barTicketMedio = parseFloat($('barTicketMedio').value) || 0;
+  const publicoConsome = totalVendidos * (barConversao/100);
+  const receitaBar = publicoConsome * barTicketMedio;
+
+  $('barPublicoConsome').textContent = `${Math.round(publicoConsome)} pessoas`;
+  $('barTicketLabel').textContent = fmt(barTicketMedio);
+  $('barTotal').textContent = fmt(receitaBar);
+}
+
+renderLotes();
+calc();
+</script>
+</body>
+</html>
